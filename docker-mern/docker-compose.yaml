@@ -1,0 +1,62 @@
+version: '3'
+networks:
+  app-networks:
+    driver: bridge
+
+services:
+  backend:
+    container_name: 'be_${APP_NAME}'
+    build: 
+      context: ./backend
+      dockerfile: Dockerfile
+    volumes:
+      - ../api:/usr/src/app
+      - ../api/node_modules
+    ports:
+      - ${BE_PORT}:3000
+    depends_on:
+      - db
+    stdin_open: true
+    tty: true
+    command: npm run dev
+    networks:
+      - app-networks
+  frontend:
+    container_name: 'fe_${APP_NAME}'
+    build: 
+      context: ./frontend
+      dockerfile: Dockerfile
+    volumes:
+      - ../app:/usr/src/app
+      - ../app/node_modules
+    ports:
+      - ${FE_PORT}:3000
+    depends_on:
+      - backend
+      - db
+    stdin_open: true
+    tty: true
+    command: npm start
+    networks:
+      - app-networks
+  db:
+    container_name: 'db_${APP_NAME}'
+    build: 
+      context: ./db
+      dockerfile: Dockerfile
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: secret
+      ME_CONFIG_MONGODB_URL: mongodb://root:secret@localhost:${DB_PORT}/
+      MONGO_INITDB_DATABASE: fbapp
+    volumes:
+      - './db/data:/data/db'
+      # - ./database/mongo-init.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    ports:
+      - ${DB_PORT}:27017
+    networks:
+      - app-networks
+
+volumes:
+  data:
+
